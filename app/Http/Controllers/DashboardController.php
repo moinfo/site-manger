@@ -79,6 +79,40 @@ class DashboardController extends Controller
 
         // Active projects count
         $activeProjects = Project::where('status', 'active')->count();
+        $totalProjects = Project::count();
+        $totalSubcontractors = Subcontractor::count();
+
+        // Monthly cash flow trend (cash in vs cash out, last 6 months)
+        $monthFrom = $now->copy()->subMonths(6)->startOfMonth()->toDateString();
+
+        $cashInByMonth = CashInflow::selectRaw("DATE_FORMAT(date, '%Y-%m') as month, SUM(amount) as total")
+            ->where('date', '>=', $monthFrom)
+            ->groupByRaw("DATE_FORMAT(date, '%Y-%m')")
+            ->pluck('total', 'month');
+
+        $cashOutByMonth = Material::selectRaw("DATE_FORMAT(date, '%Y-%m') as month, SUM(subtotal) as total")
+            ->where('date', '>=', $monthFrom)
+            ->groupByRaw("DATE_FORMAT(date, '%Y-%m')")
+            ->pluck('total', 'month');
+
+        $allMonths = $cashInByMonth->keys()->merge($cashOutByMonth->keys())->unique()->sort()->values();
+        $monthlyCashFlow = $allMonths->map(fn ($m) => [
+            'month' => Carbon::parse($m . '-01')->format('M Y'),
+            'Cash In' => (float) ($cashInByMonth[$m] ?? 0),
+            'Cash Out' => (float) ($cashOutByMonth[$m] ?? 0),
+        ]);
+
+        // Project budgets vs spent
+        $projectBudgets = Project::withSum('materials as spent', 'subtotal')
+            ->orderByDesc('budget')
+            ->limit(6)
+            ->get()
+            ->map(fn ($p) => [
+                'name' => $p->name,
+                'budget' => (float) $p->budget,
+                'spent' => (float) ($p->spent ?? 0),
+                'percentage' => $p->budget > 0 ? round(($p->spent ?? 0) / $p->budget * 100, 1) : 0,
+            ]);
 
         return Inertia::render('Dashboard', [
             'stats' => [
@@ -87,9 +121,13 @@ class DashboardController extends Controller
                 'total_received' => (float) $totalReceived,
                 'cash_balance' => (float) $cashBalance,
                 'active_projects' => $activeProjects,
+                'total_projects' => $totalProjects,
+                'total_subcontractors' => $totalSubcontractors,
             ],
             'monthlySpending' => $monthlySpending,
+            'monthlyCashFlow' => $monthlyCashFlow,
             'spendingByCategory' => $spendingByCategory,
+            'projectBudgets' => $projectBudgets,
             'subcontractorBalances' => $subcontractors->values(),
             'recentExpenses' => $recentExpenses,
         ]);

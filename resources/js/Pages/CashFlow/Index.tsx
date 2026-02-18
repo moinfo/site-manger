@@ -24,11 +24,34 @@ interface Props {
     totalOut: number;
     balance: number;
     projects: Project[];
+    filters: {
+        project_id?: string;
+        date_from?: string;
+        date_to?: string;
+    };
 }
 
-export default function CashFlowIndex({ inflows, monthlySummary, totalIn, totalOut, balance, projects }: Props) {
+export default function CashFlowIndex({ inflows, monthlySummary, totalIn, totalOut, balance, projects, filters }: Props) {
     const { t, language } = useLanguage();
     const [opened, handlers] = useDisclosure(false);
+    const [projectId, setProjectId] = useState(filters.project_id || '');
+    const [dateFrom, setDateFrom] = useState(filters.date_from || '');
+    const [dateTo, setDateTo] = useState(filters.date_to || '');
+
+    const applyFilters = () => {
+        router.get('/cashflow', {
+            project_id: projectId || undefined,
+            date_from: dateFrom || undefined,
+            date_to: dateTo || undefined,
+        }, { preserveState: true });
+    };
+
+    const clearFilters = () => {
+        setProjectId('');
+        setDateFrom('');
+        setDateTo('');
+        router.get('/cashflow');
+    };
 
     const form = useForm({
         project_id: '',
@@ -66,6 +89,34 @@ export default function CashFlowIndex({ inflows, monthlySummary, totalIn, totalO
                     <Text size="xl" fw={700} c={balance >= 0 ? 'green' : 'red'}>TZS {formatMoney(balance, language)}</Text>
                 </Paper>
             </SimpleGrid>
+
+            {/* Filters */}
+            <Paper shadow="xs" p="md" radius="md" withBorder mb="lg">
+                <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} mb="sm">
+                    <Select
+                        placeholder={t.expenses.allProjects}
+                        data={projectOptions}
+                        value={projectId}
+                        onChange={(v) => setProjectId(v || '')}
+                        clearable
+                        searchable
+                    />
+                    <DatePicker
+                        placeholder={t.expenses.from}
+                        value={dateFrom}
+                        onChange={(v) => setDateFrom(v)}
+                    />
+                    <DatePicker
+                        placeholder={t.expenses.to}
+                        value={dateTo}
+                        onChange={(v) => setDateTo(v)}
+                    />
+                    <Group>
+                        <Button size="xs" onClick={applyFilters}>{t.common.filter}</Button>
+                        <Button size="xs" variant="subtle" onClick={clearFilters}>{t.common.clear}</Button>
+                    </Group>
+                </SimpleGrid>
+            </Paper>
 
             {/* Monthly Summary */}
             <Paper shadow="xs" p="md" radius="md" withBorder mb="lg">
@@ -146,7 +197,7 @@ export default function CashFlowIndex({ inflows, monthlySummary, totalIn, totalO
                     <Pagination
                         total={inflows.last_page}
                         value={inflows.current_page}
-                        onChange={(page) => router.get('/cashflow', { page }, { preserveState: true })}
+                        onChange={(page) => router.get('/cashflow', { ...filters, page }, { preserveState: true })}
                     />
                 </Group>
             )}
