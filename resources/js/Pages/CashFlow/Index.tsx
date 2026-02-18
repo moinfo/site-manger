@@ -8,6 +8,8 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import { formatMoney, formatDate } from '@/utils/format';
 import { CashInflow, PaginatedData, Project } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
+import DatePicker from '@/Components/DatePicker';
 
 interface MonthlySummary {
     month: string;
@@ -25,6 +27,7 @@ interface Props {
 }
 
 export default function CashFlowIndex({ inflows, monthlySummary, totalIn, totalOut, balance, projects }: Props) {
+    const { t, language } = useLanguage();
     const [opened, handlers] = useDisclosure(false);
 
     const form = useForm({
@@ -45,35 +48,36 @@ export default function CashFlowIndex({ inflows, monthlySummary, totalIn, totalO
     const projectOptions = projects.map(p => ({ value: String(p.id), label: p.name }));
 
     return (
-        <AuthenticatedLayout header="Cash Flow">
-            <Head title="Cash Flow" />
+        <AuthenticatedLayout header={t.cashFlow.title}>
+            <Head title={t.cashFlow.title} />
 
             {/* Summary Cards */}
             <SimpleGrid cols={{ base: 1, sm: 3 }} mb="lg">
                 <Paper shadow="xs" p="md" radius="md" withBorder>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Total Received</Text>
-                    <Text size="xl" fw={700} c="green">TZS {formatMoney(totalIn)}</Text>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t.cashFlow.totalReceived}</Text>
+                    <Text size="xl" fw={700} c="green">TZS {formatMoney(totalIn, language)}</Text>
                 </Paper>
                 <Paper shadow="xs" p="md" radius="md" withBorder>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Total Spent</Text>
-                    <Text size="xl" fw={700} c="orange">TZS {formatMoney(totalOut)}</Text>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t.cashFlow.totalSpent}</Text>
+                    <Text size="xl" fw={700} c="orange">TZS {formatMoney(totalOut, language)}</Text>
                 </Paper>
                 <Paper shadow="xs" p="md" radius="md" withBorder>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Balance</Text>
-                    <Text size="xl" fw={700} c={balance >= 0 ? 'green' : 'red'}>TZS {formatMoney(balance)}</Text>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t.cashFlow.balance}</Text>
+                    <Text size="xl" fw={700} c={balance >= 0 ? 'green' : 'red'}>TZS {formatMoney(balance, language)}</Text>
                 </Paper>
             </SimpleGrid>
 
             {/* Monthly Summary */}
             <Paper shadow="xs" p="md" radius="md" withBorder mb="lg">
-                <Text fw={600} mb="md">Monthly Summary</Text>
+                <Text fw={600} mb="md">{t.cashFlow.monthlySummary}</Text>
+                <Table.ScrollContainer minWidth={500}>
                 <Table striped highlightOnHover>
                     <Table.Thead>
                         <Table.Tr>
-                            <Table.Th>Month</Table.Th>
-                            <Table.Th ta="right">Cash In</Table.Th>
-                            <Table.Th ta="right">Cash Out</Table.Th>
-                            <Table.Th ta="right">Net</Table.Th>
+                            <Table.Th>{t.cashFlow.month}</Table.Th>
+                            <Table.Th ta="right">{t.cashFlow.cashIn}</Table.Th>
+                            <Table.Th ta="right">{t.cashFlow.cashOut}</Table.Th>
+                            <Table.Th ta="right">{t.cashFlow.net}</Table.Th>
                         </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
@@ -82,11 +86,11 @@ export default function CashFlowIndex({ inflows, monthlySummary, totalIn, totalO
                             return (
                                 <Table.Tr key={row.month}>
                                     <Table.Td><Text size="sm" fw={500}>{row.month}</Text></Table.Td>
-                                    <Table.Td ta="right"><Text size="sm" c="green">{formatMoney(Number(row.cash_in))}</Text></Table.Td>
-                                    <Table.Td ta="right"><Text size="sm" c="orange">{formatMoney(Number(row.cash_out))}</Text></Table.Td>
+                                    <Table.Td ta="right"><Text size="sm" c="green">{formatMoney(Number(row.cash_in), language)}</Text></Table.Td>
+                                    <Table.Td ta="right"><Text size="sm" c="orange">{formatMoney(Number(row.cash_out), language)}</Text></Table.Td>
                                     <Table.Td ta="right">
                                         <Badge color={net >= 0 ? 'green' : 'red'} variant="light">
-                                            {net >= 0 ? '+' : ''}{formatMoney(net)}
+                                            {net >= 0 ? '+' : ''}{formatMoney(net, language)}
                                         </Badge>
                                     </Table.Td>
                                 </Table.Tr>
@@ -94,44 +98,47 @@ export default function CashFlowIndex({ inflows, monthlySummary, totalIn, totalO
                         })}
                     </Table.Tbody>
                 </Table>
+                </Table.ScrollContainer>
             </Paper>
 
             {/* Cash Inflows */}
             <Group justify="space-between" mb="md">
-                <Text fw={600} size="lg">Cash Inflows</Text>
-                <Button size="xs" onClick={handlers.open}>+ Record Cash In</Button>
+                <Text fw={600} size="lg">{t.cashFlow.cashInflows}</Text>
+                <Button size="xs" onClick={handlers.open}>{t.cashFlow.recordCashIn}</Button>
             </Group>
 
             <Paper shadow="xs" radius="md" withBorder>
+                <Table.ScrollContainer minWidth={650}>
                 <Table striped highlightOnHover>
                     <Table.Thead>
                         <Table.Tr>
-                            <Table.Th>Date</Table.Th>
-                            <Table.Th>Source</Table.Th>
-                            <Table.Th>Project</Table.Th>
-                            <Table.Th ta="right">Amount</Table.Th>
-                            <Table.Th>Notes</Table.Th>
-                            <Table.Th ta="center">Actions</Table.Th>
+                            <Table.Th>{t.common.date}</Table.Th>
+                            <Table.Th>{t.cashFlow.source}</Table.Th>
+                            <Table.Th>{t.expenses.project}</Table.Th>
+                            <Table.Th ta="right">{t.cashFlow.amount}</Table.Th>
+                            <Table.Th>{t.common.notes}</Table.Th>
+                            <Table.Th ta="center">{t.common.actions}</Table.Th>
                         </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
                         {inflows.data.map((inflow) => (
                             <Table.Tr key={inflow.id}>
-                                <Table.Td><Text size="sm">{formatDate(inflow.date)}</Text></Table.Td>
+                                <Table.Td><Text size="sm">{formatDate(inflow.date, language)}</Text></Table.Td>
                                 <Table.Td><Text size="sm" fw={500}>{inflow.source}</Text></Table.Td>
                                 <Table.Td><Text size="sm">{inflow.project?.name}</Text></Table.Td>
-                                <Table.Td ta="right"><Text size="sm" fw={600} c="green">{formatMoney(inflow.amount)}</Text></Table.Td>
+                                <Table.Td ta="right"><Text size="sm" fw={600} c="green">{formatMoney(inflow.amount, language)}</Text></Table.Td>
                                 <Table.Td><Text size="sm" c="dimmed">{inflow.notes || '-'}</Text></Table.Td>
                                 <Table.Td ta="center">
                                     <Button
                                         size="compact-xs" variant="subtle" color="red"
-                                        onClick={() => { if (confirm('Delete?')) router.delete(`/cashflow/${inflow.id}`); }}
-                                    >Delete</Button>
+                                        onClick={() => { if (confirm(t.cashFlow.deleteConfirm)) router.delete(`/cashflow/${inflow.id}`); }}
+                                    >{t.common.delete}</Button>
                                 </Table.Td>
                             </Table.Tr>
                         ))}
                     </Table.Tbody>
                 </Table>
+                </Table.ScrollContainer>
             </Paper>
 
             {inflows.last_page > 1 && (
@@ -145,15 +152,15 @@ export default function CashFlowIndex({ inflows, monthlySummary, totalIn, totalO
             )}
 
             {/* Add Inflow Modal */}
-            <Modal opened={opened} onClose={handlers.close} title="Record Cash Received">
+            <Modal opened={opened} onClose={handlers.close} title={t.cashFlow.recordCashReceived}>
                 <form onSubmit={submit}>
                     <Stack>
-                        <Select label="Project" data={projectOptions} value={form.data.project_id} onChange={(v) => form.setData('project_id', v || '')} required searchable />
-                        <TextInput label="Date" type="date" value={form.data.date} onChange={(e) => form.setData('date', e.target.value)} required />
-                        <TextInput label="Source" placeholder="e.g. Wildedge Safaris Ltd" value={form.data.source} onChange={(e) => form.setData('source', e.target.value)} required />
-                        <NumberInput label="Amount (TZS)" value={form.data.amount} onChange={(v) => form.setData('amount', Number(v) || 0)} min={0.01} thousandSeparator="," required />
-                        <TextInput label="Notes" value={form.data.notes} onChange={(e) => form.setData('notes', e.target.value)} />
-                        <Button type="submit" loading={form.processing}>Save</Button>
+                        <Select label={t.expenses.project} data={projectOptions} value={form.data.project_id} onChange={(v) => form.setData('project_id', v || '')} required searchable />
+                        <DatePicker label={t.common.date} value={form.data.date} onChange={(v) => form.setData('date', v)} required />
+                        <TextInput label={t.cashFlow.source} placeholder={t.cashFlow.sourcePlaceholder} value={form.data.source} onChange={(e) => form.setData('source', e.target.value)} required />
+                        <NumberInput label={t.subcontractors.amountTzs} value={form.data.amount} onChange={(v) => form.setData('amount', Number(v) || 0)} min={0.01} thousandSeparator="," required />
+                        <TextInput label={t.common.notes} value={form.data.notes} onChange={(e) => form.setData('notes', e.target.value)} />
+                        <Button type="submit" loading={form.processing}>{t.common.save}</Button>
                     </Stack>
                 </form>
             </Modal>

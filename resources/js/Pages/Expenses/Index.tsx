@@ -9,14 +9,14 @@ import {
     Paper,
     Text,
     Badge,
-    ActionIcon,
     Pagination,
     SimpleGrid,
-    Stack,
 } from '@mantine/core';
 import { useState } from 'react';
 import { formatMoney, formatDate } from '@/utils/format';
 import { Material, PaginatedData, Project } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
+import DatePicker from '@/Components/DatePicker';
 
 interface Props {
     expenses: PaginatedData<Material>;
@@ -33,6 +33,7 @@ interface Props {
 }
 
 export default function ExpensesIndex({ expenses, filters, projects, categories, totalFiltered }: Props) {
+    const { t, language } = useLanguage();
     const [search, setSearch] = useState(filters.search || '');
     const [projectId, setProjectId] = useState(filters.project_id || '');
     const [category, setCategory] = useState(filters.category || '');
@@ -62,51 +63,49 @@ export default function ExpensesIndex({ expenses, filters, projects, categories,
     const categoryOptions = Object.entries(categories).map(([k, v]) => ({ value: k, label: v }));
 
     return (
-        <AuthenticatedLayout header="Expenses">
-            <Head title="Expenses" />
+        <AuthenticatedLayout header={t.expenses.title}>
+            <Head title={t.expenses.title} />
 
             {/* Filters */}
             <Paper shadow="xs" p="md" radius="md" withBorder mb="md">
                 <SimpleGrid cols={{ base: 1, sm: 2, md: 5 }} mb="sm">
                     <TextInput
-                        placeholder="Search description..."
+                        placeholder={t.expenses.searchPlaceholder}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
                     />
                     <Select
-                        placeholder="All Projects"
+                        placeholder={t.expenses.allProjects}
                         data={projectOptions}
                         value={projectId}
                         onChange={(v) => setProjectId(v || '')}
                         clearable
                     />
                     <Select
-                        placeholder="All Categories"
+                        placeholder={t.expenses.allCategories}
                         data={categoryOptions}
                         value={category}
                         onChange={(v) => setCategory(v || '')}
                         clearable
                     />
-                    <TextInput
-                        type="date"
-                        placeholder="From"
+                    <DatePicker
+                        placeholder={t.expenses.from}
                         value={dateFrom}
-                        onChange={(e) => setDateFrom(e.target.value)}
+                        onChange={(v) => setDateFrom(v)}
                     />
-                    <TextInput
-                        type="date"
-                        placeholder="To"
+                    <DatePicker
+                        placeholder={t.expenses.to}
                         value={dateTo}
-                        onChange={(e) => setDateTo(e.target.value)}
+                        onChange={(v) => setDateTo(v)}
                     />
                 </SimpleGrid>
                 <Group>
-                    <Button size="xs" onClick={applyFilters}>Filter</Button>
-                    <Button size="xs" variant="subtle" onClick={clearFilters}>Clear</Button>
+                    <Button size="xs" onClick={applyFilters}>{t.common.filter}</Button>
+                    <Button size="xs" variant="subtle" onClick={clearFilters}>{t.common.clear}</Button>
                     <Text size="sm" c="dimmed" ml="auto">
-                        Total: <Text span fw={700} c="dark">TZS {formatMoney(totalFiltered)}</Text>
-                        {' '}({expenses.total} records)
+                        {t.common.total}: <Text span fw={700}>TZS {formatMoney(totalFiltered, language)}</Text>
+                        {' '}({expenses.total} {t.common.records})
                     </Text>
                 </Group>
             </Paper>
@@ -114,37 +113,38 @@ export default function ExpensesIndex({ expenses, filters, projects, categories,
             {/* Actions */}
             <Group justify="flex-end" mb="md">
                 <Button component={Link} href="/expenses/create">
-                    + Add Expense
+                    {t.expenses.addExpense}
                 </Button>
             </Group>
 
             {/* Table */}
             <Paper shadow="xs" radius="md" withBorder>
+                <Table.ScrollContainer minWidth={800}>
                 <Table striped highlightOnHover>
                     <Table.Thead>
                         <Table.Tr>
-                            <Table.Th>Date</Table.Th>
-                            <Table.Th>Description</Table.Th>
-                            <Table.Th>Category</Table.Th>
-                            <Table.Th>Project</Table.Th>
-                            <Table.Th ta="right">Qty</Table.Th>
-                            <Table.Th>Unit</Table.Th>
-                            <Table.Th ta="right">Price</Table.Th>
-                            <Table.Th ta="right">Subtotal</Table.Th>
-                            <Table.Th ta="center">Actions</Table.Th>
+                            <Table.Th>{t.common.date}</Table.Th>
+                            <Table.Th>{t.expenses.description}</Table.Th>
+                            <Table.Th>{t.expenses.category}</Table.Th>
+                            <Table.Th>{t.expenses.project}</Table.Th>
+                            <Table.Th ta="right">{t.expenses.qty}</Table.Th>
+                            <Table.Th>{t.expenses.unit}</Table.Th>
+                            <Table.Th ta="right">{t.expenses.price}</Table.Th>
+                            <Table.Th ta="right">{t.expenses.subtotal}</Table.Th>
+                            <Table.Th ta="center">{t.common.actions}</Table.Th>
                         </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
                         {expenses.data.length === 0 && (
                             <Table.Tr>
                                 <Table.Td colSpan={9}>
-                                    <Text ta="center" c="dimmed" py="lg">No expenses found.</Text>
+                                    <Text ta="center" c="dimmed" py="lg">{t.expenses.noExpenses}</Text>
                                 </Table.Td>
                             </Table.Tr>
                         )}
                         {expenses.data.map((expense) => (
                             <Table.Tr key={expense.id}>
-                                <Table.Td><Text size="sm">{formatDate(expense.date)}</Text></Table.Td>
+                                <Table.Td><Text size="sm">{formatDate(expense.date, language)}</Text></Table.Td>
                                 <Table.Td><Text size="sm" fw={500}>{expense.description}</Text></Table.Td>
                                 <Table.Td>
                                     <Badge variant="light" size="sm">
@@ -154,8 +154,8 @@ export default function ExpensesIndex({ expenses, filters, projects, categories,
                                 <Table.Td><Text size="sm">{expense.project?.name}</Text></Table.Td>
                                 <Table.Td ta="right"><Text size="sm">{expense.quantity}</Text></Table.Td>
                                 <Table.Td><Text size="sm">{expense.unit}</Text></Table.Td>
-                                <Table.Td ta="right"><Text size="sm">{formatMoney(expense.unit_price)}</Text></Table.Td>
-                                <Table.Td ta="right"><Text size="sm" fw={600}>{formatMoney(expense.subtotal)}</Text></Table.Td>
+                                <Table.Td ta="right"><Text size="sm">{formatMoney(expense.unit_price, language)}</Text></Table.Td>
+                                <Table.Td ta="right"><Text size="sm" fw={600}>{formatMoney(expense.subtotal, language)}</Text></Table.Td>
                                 <Table.Td ta="center">
                                     <Group gap="xs" justify="center">
                                         <Button
@@ -164,19 +164,19 @@ export default function ExpensesIndex({ expenses, filters, projects, categories,
                                             size="compact-xs"
                                             variant="subtle"
                                         >
-                                            Edit
+                                            {t.common.edit}
                                         </Button>
                                         <Button
                                             size="compact-xs"
                                             variant="subtle"
                                             color="red"
                                             onClick={() => {
-                                                if (confirm('Delete this expense?')) {
+                                                if (confirm(t.expenses.deleteConfirm)) {
                                                     router.delete(`/expenses/${expense.id}`);
                                                 }
                                             }}
                                         >
-                                            Delete
+                                            {t.common.delete}
                                         </Button>
                                     </Group>
                                 </Table.Td>
@@ -184,6 +184,7 @@ export default function ExpensesIndex({ expenses, filters, projects, categories,
                         ))}
                     </Table.Tbody>
                 </Table>
+                </Table.ScrollContainer>
             </Paper>
 
             {expenses.last_page > 1 && (

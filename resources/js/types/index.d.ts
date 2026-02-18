@@ -87,6 +87,24 @@ export interface CashInflow {
     created_at: string;
 }
 
+export interface ChargeCategory {
+    id: number;
+    name: string;
+}
+
+export interface FinancialCharge {
+    id: number;
+    project_id: number;
+    charge_category_id: number;
+    date: string;
+    amount: number;
+    description: string;
+    recorded_by: number | null;
+    project?: Project;
+    category?: ChargeCategory;
+    created_at: string;
+}
+
 export interface PaginatedData<T> {
     data: T[];
     current_page: number;

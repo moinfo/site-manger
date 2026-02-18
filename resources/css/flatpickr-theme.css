@@ -1,0 +1,83 @@
+/* Flatpickr theme overrides — syncs with Mantine dark/light mode */
+
+.flatpickr-calendar {
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--mantine-color-default-border);
+    font-family: var(--mantine-font-family);
+    overflow: hidden;
+}
+
+.flatpickr-months .flatpickr-month {
+    height: 40px;
+}
+
+.flatpickr-current-month {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.flatpickr-day {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover {
+    background: var(--mantine-color-blue-6);
+    border-color: var(--mantine-color-blue-6);
+}
+
+.flatpickr-day.today:not(.selected) {
+    border-color: var(--mantine-color-blue-4);
+}
+
+.flatpickr-day:hover {
+    background: var(--mantine-color-blue-light);
+}
+
+/* Dark mode */
+[data-mantine-color-scheme="dark"] .flatpickr-calendar {
+    background: var(--mantine-color-dark-7);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+[data-mantine-color-scheme="dark"] .flatpickr-months .flatpickr-month,
+[data-mantine-color-scheme="dark"] .flatpickr-weekdays,
+[data-mantine-color-scheme="dark"] span.flatpickr-weekday {
+    background: var(--mantine-color-dark-7);
+    color: var(--mantine-color-dark-0);
+}
+
+[data-mantine-color-scheme="dark"] .flatpickr-day {
+    color: var(--mantine-color-dark-0);
+}
+
+[data-mantine-color-scheme="dark"] .flatpickr-day:hover {
+    background: var(--mantine-color-dark-5);
+    border-color: var(--mantine-color-dark-5);
+}
+
+[data-mantine-color-scheme="dark"] .flatpickr-day.prevMonthDay,
+[data-mantine-color-scheme="dark"] .flatpickr-day.nextMonthDay {
+    color: var(--mantine-color-dark-3);
+}
+
+[data-mantine-color-scheme="dark"] .flatpickr-months .flatpickr-prev-month,
+[data-mantine-color-scheme="dark"] .flatpickr-months .flatpickr-next-month {
+    fill: var(--mantine-color-dark-0);
+}
+
+[data-mantine-color-scheme="dark"] .flatpickr-months .flatpickr-prev-month:hover svg,
+[data-mantine-color-scheme="dark"] .flatpickr-months .flatpickr-next-month:hover svg {
+    fill: var(--mantine-color-blue-4);
+}
+
+[data-mantine-color-scheme="dark"] .flatpickr-current-month .flatpickr-monthDropdown-months,
+[data-mantine-color-scheme="dark"] .flatpickr-current-month input.cur-year {
+    color: var(--mantine-color-dark-0);
+}
+
+[data-mantine-color-scheme="dark"] .flatpickr-current-month .flatpickr-monthDropdown-months {
+    background: var(--mantine-color-dark-7);
+}

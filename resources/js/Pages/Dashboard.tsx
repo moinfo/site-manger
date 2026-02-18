@@ -8,11 +8,15 @@ import {
     Stack,
     Table,
     Badge,
+    Box,
+    Anchor,
+    Divider,
     ThemeIcon,
 } from '@mantine/core';
 import { BarChart, PieChart } from '@mantine/charts';
 import { formatMoney, formatDate } from '@/utils/format';
 import { Material } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
     stats: {
@@ -36,16 +40,40 @@ interface Props {
 
 const COLORS = ['blue', 'cyan', 'teal', 'green', 'lime', 'yellow', 'orange', 'red', 'pink', 'grape', 'violet'];
 
-function StatCard({ label, value, color = 'blue' }: { label: string; value: string; color?: string }) {
+function StatCard({ label, value, icon, color = 'blue' }: { label: string; value: string; icon: string; color?: string }) {
     return (
-        <Paper shadow="xs" p="md" radius="md" withBorder>
-            <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{label}</Text>
-            <Text size="xl" fw={700} c={color} mt={4}>{value}</Text>
+        <Paper
+            shadow="sm"
+            p="lg"
+            radius="md"
+            style={{
+                borderLeft: `4px solid var(--mantine-color-${color}-6)`,
+                overflow: 'hidden',
+                position: 'relative',
+            }}
+        >
+            <Group justify="space-between" align="flex-start" wrap="nowrap">
+                <div style={{ minWidth: 0, flex: 1 }}>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb={6}>{label}</Text>
+                    <Text size="xl" fw={800} c={color} style={{ lineHeight: 1.1 }}>{value}</Text>
+                </div>
+                <ThemeIcon
+                    size={44}
+                    radius="md"
+                    variant="light"
+                    color={color}
+                    style={{ flexShrink: 0 }}
+                >
+                    <Text size="lg">{icon}</Text>
+                </ThemeIcon>
+            </Group>
         </Paper>
     );
 }
 
 export default function Dashboard({ stats, monthlySpending, spendingByCategory, subcontractorBalances, recentExpenses }: Props) {
+    const { t, language } = useLanguage();
+
     const pieData = spendingByCategory.map((item, i) => ({
         name: item.category,
         value: item.total,
@@ -58,131 +86,150 @@ export default function Dashboard({ stats, monthlySpending, spendingByCategory, 
     }));
 
     return (
-        <AuthenticatedLayout header="Dashboard">
-            <Head title="Dashboard" />
+        <AuthenticatedLayout header={t.dashboard.title}>
+            <Head title={t.dashboard.title} />
 
             {/* Stats Cards */}
-            <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} mb="lg">
+            <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} mb="xl">
                 <StatCard
-                    label="Spent This Month"
-                    value={`TZS ${formatMoney(stats.spent_this_month)}`}
+                    label={t.dashboard.spentThisMonth}
+                    value={`TZS ${formatMoney(stats.spent_this_month, language)}`}
+                    icon="📅"
                     color="blue"
                 />
                 <StatCard
-                    label="Total Spent"
-                    value={`TZS ${formatMoney(stats.total_spent)}`}
+                    label={t.dashboard.totalSpent}
+                    value={`TZS ${formatMoney(stats.total_spent, language)}`}
+                    icon="💸"
                     color="orange"
                 />
                 <StatCard
-                    label="Total Received"
-                    value={`TZS ${formatMoney(stats.total_received)}`}
+                    label={t.dashboard.totalReceived}
+                    value={`TZS ${formatMoney(stats.total_received, language)}`}
+                    icon="📥"
                     color="green"
                 />
                 <StatCard
-                    label="Cash Balance"
-                    value={`TZS ${formatMoney(stats.cash_balance)}`}
-                    color={stats.cash_balance >= 0 ? 'green' : 'red'}
+                    label={t.dashboard.cashBalance}
+                    value={`TZS ${formatMoney(stats.cash_balance, language)}`}
+                    icon="🏦"
+                    color={stats.cash_balance >= 0 ? 'teal' : 'red'}
                 />
             </SimpleGrid>
 
             {/* Charts */}
-            <SimpleGrid cols={{ base: 1, md: 2 }} mb="lg">
-                <Paper shadow="xs" p="md" radius="md" withBorder>
-                    <Text fw={600} mb="md">Monthly Spending Trend</Text>
+            <SimpleGrid cols={{ base: 1, md: 2 }} mb="xl">
+                <Paper shadow="sm" p="lg" radius="md" withBorder>
+                    <Text fw={700} size="md" mb="sm">{t.dashboard.monthlySpendingTrend}</Text>
+                    <Divider mb="md" />
                     {barData.length > 0 ? (
                         <BarChart
-                            h={250}
+                            h={260}
                             data={barData}
                             dataKey="month"
                             series={[{ name: 'Spending', color: 'blue.6' }]}
-                            valueFormatter={(value) => formatMoney(value)}
+                            valueFormatter={(value) => formatMoney(value, language)}
+                            gridAxis="y"
                         />
                     ) : (
-                        <Text c="dimmed" ta="center" py="xl">No data yet</Text>
+                        <Text c="dimmed" ta="center" py="xl">{t.common.noDataYet}</Text>
                     )}
                 </Paper>
 
-                <Paper shadow="xs" p="md" radius="md" withBorder>
-                    <Text fw={600} mb="md">Spending by Category</Text>
+                <Paper shadow="sm" p="lg" radius="md" withBorder>
+                    <Text fw={700} size="md" mb="sm">{t.dashboard.spendingByCategory}</Text>
+                    <Divider mb="md" />
                     {pieData.length > 0 ? (
                         <PieChart
-                            h={250}
+                            h={260}
                             data={pieData}
-                            valueFormatter={(value) => `TZS ${formatMoney(value)}`}
+                            valueFormatter={(value) => `TZS ${formatMoney(value, language)}`}
                             withTooltip
+                            withLabelsLine
+                            labelsType="percent"
                         />
                     ) : (
-                        <Text c="dimmed" ta="center" py="xl">No data yet</Text>
+                        <Text c="dimmed" ta="center" py="xl">{t.common.noDataYet}</Text>
                     )}
                 </Paper>
             </SimpleGrid>
 
             {/* Subcontractor Balances & Recent Expenses */}
             <SimpleGrid cols={{ base: 1, md: 2 }}>
-                <Paper shadow="xs" p="md" radius="md" withBorder>
-                    <Text fw={600} mb="md">Subcontractor Balances</Text>
+                <Paper shadow="sm" p="lg" radius="md" withBorder>
+                    <Text fw={700} size="md" mb="sm">{t.dashboard.subcontractorBalances}</Text>
+                    <Divider mb="md" />
                     {subcontractorBalances.length > 0 ? (
-                        <Table striped highlightOnHover>
+                        <Table.ScrollContainer minWidth={450}>
+                        <Table striped highlightOnHover verticalSpacing="sm">
                             <Table.Thead>
                                 <Table.Tr>
-                                    <Table.Th>Name</Table.Th>
-                                    <Table.Th ta="right">Billed</Table.Th>
-                                    <Table.Th ta="right">Paid</Table.Th>
-                                    <Table.Th ta="right">Balance</Table.Th>
+                                    <Table.Th>{t.common.name}</Table.Th>
+                                    <Table.Th ta="right">{t.dashboard.billed}</Table.Th>
+                                    <Table.Th ta="right">{t.dashboard.paid}</Table.Th>
+                                    <Table.Th ta="right">{t.dashboard.balance}</Table.Th>
                                 </Table.Tr>
                             </Table.Thead>
                             <Table.Tbody>
                                 {subcontractorBalances.map((sub) => (
                                     <Table.Tr key={sub.id}>
                                         <Table.Td>
-                                            <Link href={`/subcontractors/${sub.id}`}>
-                                                <Text size="sm" c="blue" fw={500}>{sub.name}</Text>
-                                            </Link>
+                                            <Anchor component={Link} href={`/subcontractors/${sub.id}`} size="sm" fw={500}>
+                                                {sub.name}
+                                            </Anchor>
                                         </Table.Td>
                                         <Table.Td ta="right">
-                                            <Text size="sm">{formatMoney(sub.total_billed)}</Text>
+                                            <Text size="sm">{formatMoney(sub.total_billed, language)}</Text>
                                         </Table.Td>
                                         <Table.Td ta="right">
-                                            <Text size="sm">{formatMoney(sub.total_paid)}</Text>
+                                            <Text size="sm">{formatMoney(sub.total_paid, language)}</Text>
                                         </Table.Td>
                                         <Table.Td ta="right">
                                             <Badge
                                                 color={sub.balance > 0 ? 'orange' : sub.balance < 0 ? 'red' : 'green'}
                                                 variant="light"
+                                                size="md"
                                             >
-                                                {formatMoney(Math.abs(sub.balance))}
+                                                {formatMoney(Math.abs(sub.balance), language)}
                                             </Badge>
                                         </Table.Td>
                                     </Table.Tr>
                                 ))}
                             </Table.Tbody>
                         </Table>
+                        </Table.ScrollContainer>
                     ) : (
-                        <Text c="dimmed" ta="center" py="xl">No subcontractors yet</Text>
+                        <Text c="dimmed" ta="center" py="xl">{t.subcontractors.noSubcontractors}</Text>
                     )}
                 </Paper>
 
-                <Paper shadow="xs" p="md" radius="md" withBorder>
-                    <Group justify="space-between" mb="md">
-                        <Text fw={600}>Recent Expenses</Text>
-                        <Link href="/expenses">
-                            <Text size="sm" c="blue">View all</Text>
-                        </Link>
+                <Paper shadow="sm" p="lg" radius="md" withBorder>
+                    <Group justify="space-between" mb="sm">
+                        <Text fw={700} size="md">{t.dashboard.recentExpenses}</Text>
+                        <Anchor component={Link} href="/expenses" size="sm">
+                            {t.dashboard.viewAll} →
+                        </Anchor>
                     </Group>
+                    <Divider mb="md" />
                     {recentExpenses.length > 0 ? (
-                        <Stack gap="xs">
-                            {recentExpenses.map((expense) => (
-                                <Group key={expense.id} justify="space-between" py={4}>
-                                    <div>
-                                        <Text size="sm" fw={500}>{expense.description}</Text>
-                                        <Text size="xs" c="dimmed">{formatDate(expense.date)}</Text>
-                                    </div>
-                                    <Text size="sm" fw={600}>TZS {formatMoney(expense.subtotal)}</Text>
-                                </Group>
+                        <Stack gap={0}>
+                            {recentExpenses.map((expense, i) => (
+                                <Box key={expense.id}>
+                                    <Group justify="space-between" py="sm" wrap="nowrap" gap="sm">
+                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                            <Text size="sm" fw={500} truncate="end">{expense.description}</Text>
+                                            <Text size="xs" c="dimmed">{formatDate(expense.date, language)}</Text>
+                                        </div>
+                                        <Text size="sm" fw={700} style={{ flexShrink: 0 }}>
+                                            TZS {formatMoney(expense.subtotal, language)}
+                                        </Text>
+                                    </Group>
+                                    {i < recentExpenses.length - 1 && <Divider />}
+                                </Box>
                             ))}
                         </Stack>
                     ) : (
-                        <Text c="dimmed" ta="center" py="xl">No expenses yet</Text>
+                        <Text c="dimmed" ta="center" py="xl">{t.expenses.noExpenses}</Text>
                     )}
                 </Paper>
             </SimpleGrid>

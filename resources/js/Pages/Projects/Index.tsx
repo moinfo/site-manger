@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Table, Button, Group, Paper, Text, Badge, Progress } from '@mantine/core';
 import { formatMoney } from '@/utils/format';
 import { Project } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
     projects: (Project & { total_spent: number; total_received: number })[];
@@ -15,32 +16,41 @@ const statusColor: Record<string, string> = {
 };
 
 export default function ProjectsIndex({ projects }: Props) {
+    const { t, language } = useLanguage();
+
+    const statusLabel: Record<string, string> = {
+        active: t.projects.active,
+        completed: t.projects.completed,
+        on_hold: t.projects.onHold,
+    };
+
     return (
-        <AuthenticatedLayout header="Projects">
-            <Head title="Projects" />
+        <AuthenticatedLayout header={t.projects.title}>
+            <Head title={t.projects.title} />
 
             <Group justify="flex-end" mb="md">
-                <Button component={Link} href="/projects/create">+ New Project</Button>
+                <Button component={Link} href="/projects/create">+ {t.projects.newProject}</Button>
             </Group>
 
             <Paper shadow="xs" radius="md" withBorder>
+                <Table.ScrollContainer minWidth={700}>
                 <Table striped highlightOnHover>
                     <Table.Thead>
                         <Table.Tr>
-                            <Table.Th>Name</Table.Th>
-                            <Table.Th>Location</Table.Th>
-                            <Table.Th>Status</Table.Th>
-                            <Table.Th ta="right">Budget</Table.Th>
-                            <Table.Th ta="right">Spent</Table.Th>
-                            <Table.Th>Progress</Table.Th>
-                            <Table.Th ta="center">Actions</Table.Th>
+                            <Table.Th>{t.common.name}</Table.Th>
+                            <Table.Th>{t.common.location}</Table.Th>
+                            <Table.Th>{t.common.status}</Table.Th>
+                            <Table.Th ta="right">{t.common.budget}</Table.Th>
+                            <Table.Th ta="right">{t.projects.spent}</Table.Th>
+                            <Table.Th>{t.projects.progress}</Table.Th>
+                            <Table.Th ta="center">{t.common.actions}</Table.Th>
                         </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
                         {projects.length === 0 && (
                             <Table.Tr>
                                 <Table.Td colSpan={7}>
-                                    <Text ta="center" c="dimmed" py="lg">No projects yet.</Text>
+                                    <Text ta="center" c="dimmed" py="lg">{t.projects.noProjects}</Text>
                                 </Table.Td>
                             </Table.Tr>
                         )}
@@ -58,14 +68,14 @@ export default function ProjectsIndex({ projects }: Props) {
                                     <Table.Td><Text size="sm">{project.location}</Text></Table.Td>
                                     <Table.Td>
                                         <Badge color={statusColor[project.status]} variant="light" size="sm">
-                                            {project.status}
+                                            {statusLabel[project.status] || project.status}
                                         </Badge>
                                     </Table.Td>
                                     <Table.Td ta="right">
-                                        <Text size="sm">{project.budget > 0 ? formatMoney(project.budget) : '-'}</Text>
+                                        <Text size="sm">{project.budget > 0 ? formatMoney(project.budget, language) : '-'}</Text>
                                     </Table.Td>
                                     <Table.Td ta="right">
-                                        <Text size="sm" fw={600}>{formatMoney(project.total_spent || 0)}</Text>
+                                        <Text size="sm" fw={600}>{formatMoney(project.total_spent || 0, language)}</Text>
                                     </Table.Td>
                                     <Table.Td w={120}>
                                         {project.budget > 0 && (
@@ -78,11 +88,11 @@ export default function ProjectsIndex({ projects }: Props) {
                                     </Table.Td>
                                     <Table.Td ta="center">
                                         <Group gap="xs" justify="center">
-                                            <Button component={Link} href={`/projects/${project.id}/edit`} size="compact-xs" variant="subtle">Edit</Button>
+                                            <Button component={Link} href={`/projects/${project.id}/edit`} size="compact-xs" variant="subtle">{t.common.edit}</Button>
                                             <Button
                                                 size="compact-xs" variant="subtle" color="red"
-                                                onClick={() => { if (confirm('Delete this project?')) router.delete(`/projects/${project.id}`); }}
-                                            >Delete</Button>
+                                                onClick={() => { if (confirm(t.projects.deleteConfirm)) router.delete(`/projects/${project.id}`); }}
+                                            >{t.common.delete}</Button>
                                         </Group>
                                     </Table.Td>
                                 </Table.Tr>
@@ -90,6 +100,7 @@ export default function ProjectsIndex({ projects }: Props) {
                         })}
                     </Table.Tbody>
                 </Table>
+                </Table.ScrollContainer>
             </Paper>
         </AuthenticatedLayout>
     );

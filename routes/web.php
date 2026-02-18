@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CashInflowController;
+use App\Http\Controllers\FinancialChargeController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
@@ -49,9 +50,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/cashflow', [CashInflowController::class, 'store'])->name('cashflow.store');
     Route::delete('/cashflow/{cashInflow}', [CashInflowController::class, 'destroy'])->name('cashflow.destroy');
 
+    // Financial Charges
+    Route::resource('charges', FinancialChargeController::class)->except(['show']);
+    Route::post('/charge-categories', [FinancialChargeController::class, 'storeCategory'])->name('charge-categories.store');
+    Route::delete('/charge-categories/{chargeCategory}', [FinancialChargeController::class, 'destroyCategory'])->name('charge-categories.destroy');
+
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly');
+    Route::get('/reports/subcontractors', [ReportController::class, 'subcontractors'])->name('reports.subcontractors');
+    Route::get('/reports/cashflow', [ReportController::class, 'cashflow'])->name('reports.cashflow');
+    Route::get('/reports/project-statement', [ReportController::class, 'projectStatement'])->name('reports.project-statement');
     Route::get('/reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');
 
     // Admin routes

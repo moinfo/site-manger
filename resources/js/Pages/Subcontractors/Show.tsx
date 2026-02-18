@@ -8,6 +8,8 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import { formatMoney, formatDate } from '@/utils/format';
 import { Subcontractor, Contract, Project } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
+import DatePicker from '@/Components/DatePicker';
 
 interface Props {
     subcontractor: Subcontractor & { contracts: (Contract & { payments: any[]; project: Project })[] };
@@ -15,6 +17,7 @@ interface Props {
 }
 
 export default function SubcontractorShow({ subcontractor, projects }: Props) {
+    const { t, language } = useLanguage();
     const [contractModal, contractModalHandlers] = useDisclosure(false);
     const [paymentModal, paymentModalHandlers] = useDisclosure(false);
     const [activeContractId, setActiveContractId] = useState<number | null>(null);
@@ -63,84 +66,91 @@ export default function SubcontractorShow({ subcontractor, projects }: Props) {
             <Head title={subcontractor.name} />
 
             <Group justify="flex-end" mb="md">
-                <Button variant="light" component={Link} href={`/subcontractors/${subcontractor.id}/edit`}>Edit Subcontractor</Button>
+                <Button variant="light" component={Link} href={`/subcontractors/${subcontractor.id}/edit`}>{t.subcontractors.editSubcontractor}</Button>
             </Group>
 
             {/* Summary */}
             <SimpleGrid cols={{ base: 1, sm: 3 }} mb="lg">
                 <Paper shadow="xs" p="md" radius="md" withBorder>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Total Billed</Text>
-                    <Text size="xl" fw={700}>TZS {formatMoney(totalBilled)}</Text>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t.subcontractors.totalBilled}</Text>
+                    <Text size="xl" fw={700}>TZS {formatMoney(totalBilled, language)}</Text>
                 </Paper>
                 <Paper shadow="xs" p="md" radius="md" withBorder>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Total Paid</Text>
-                    <Text size="xl" fw={700} c="green">TZS {formatMoney(totalPaid)}</Text>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t.subcontractors.totalPaid}</Text>
+                    <Text size="xl" fw={700} c="green">TZS {formatMoney(totalPaid, language)}</Text>
                 </Paper>
                 <Paper shadow="xs" p="md" radius="md" withBorder>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Balance Owed</Text>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t.subcontractors.balanceOwed}</Text>
                     <Text size="xl" fw={700} c={totalBilled - totalPaid > 0 ? 'orange' : 'green'}>
-                        TZS {formatMoney(totalBilled - totalPaid)}
+                        TZS {formatMoney(totalBilled - totalPaid, language)}
                     </Text>
                 </Paper>
             </SimpleGrid>
 
             {/* Contracts */}
             <Group justify="space-between" mb="md">
-                <Text fw={600} size="lg">Contracts</Text>
-                <Button size="xs" onClick={contractModalHandlers.open}>+ Add Contract</Button>
+                <Text fw={600} size="lg">{t.subcontractors.contracts}</Text>
+                <Button size="xs" onClick={contractModalHandlers.open}>{t.subcontractors.addContract}</Button>
             </Group>
 
             {subcontractor.contracts?.map((contract) => {
                 const contractPaid = contract.payments?.reduce((s: number, p: any) => s + Number(p.amount), 0) || 0;
+                const statusLabel: Record<string, string> = {
+                    pending: t.subcontractors.pending,
+                    in_progress: t.subcontractors.inProgress,
+                    completed: t.subcontractors.completed,
+                };
                 return (
                     <Paper key={contract.id} shadow="xs" p="md" radius="md" withBorder mb="md">
-                        <Group justify="space-between" mb="sm">
+                        <Group justify="space-between" mb="sm" wrap="wrap" gap="xs">
                             <div>
                                 <Text fw={600}>{contract.description}</Text>
                                 <Text size="sm" c="dimmed">{contract.project?.name}</Text>
                             </div>
-                            <Group gap="xs">
+                            <Group gap="xs" wrap="wrap">
                                 <Badge color={contract.status === 'completed' ? 'green' : contract.status === 'in_progress' ? 'blue' : 'gray'} variant="light">
-                                    {contract.status}
+                                    {statusLabel[contract.status] || contract.status}
                                 </Badge>
-                                <Text fw={700}>TZS {formatMoney(Number(contract.billed_amount))}</Text>
+                                <Text fw={700}>TZS {formatMoney(Number(contract.billed_amount), language)}</Text>
                             </Group>
                         </Group>
 
-                        <SimpleGrid cols={3} mb="sm">
+                        <SimpleGrid cols={{ base: 1, xs: 3 }} mb="sm">
                             <div>
-                                <Text size="xs" c="dimmed">Billed</Text>
-                                <Text size="sm" fw={600}>{formatMoney(Number(contract.billed_amount))}</Text>
+                                <Text size="xs" c="dimmed">{t.dashboard.billed}</Text>
+                                <Text size="sm" fw={600}>{formatMoney(Number(contract.billed_amount), language)}</Text>
                             </div>
                             <div>
-                                <Text size="xs" c="dimmed">Paid</Text>
-                                <Text size="sm" fw={600} c="green">{formatMoney(contractPaid)}</Text>
+                                <Text size="xs" c="dimmed">{t.dashboard.paid}</Text>
+                                <Text size="sm" fw={600} c="green">{formatMoney(contractPaid, language)}</Text>
                             </div>
                             <div>
-                                <Text size="xs" c="dimmed">Remaining</Text>
-                                <Text size="sm" fw={600} c="orange">{formatMoney(Number(contract.billed_amount) - contractPaid)}</Text>
+                                <Text size="xs" c="dimmed">{t.projects.remaining}</Text>
+                                <Text size="sm" fw={600} c="orange">{formatMoney(Number(contract.billed_amount) - contractPaid, language)}</Text>
                             </div>
                         </SimpleGrid>
 
                         {contract.payments && contract.payments.length > 0 && (
+                            <Table.ScrollContainer minWidth={400}>
                             <Table striped>
                                 <Table.Thead>
                                     <Table.Tr>
-                                        <Table.Th>Date</Table.Th>
-                                        <Table.Th ta="right">Amount</Table.Th>
-                                        <Table.Th>Notes</Table.Th>
+                                        <Table.Th>{t.common.date}</Table.Th>
+                                        <Table.Th ta="right">{t.cashFlow.amount}</Table.Th>
+                                        <Table.Th>{t.common.notes}</Table.Th>
                                     </Table.Tr>
                                 </Table.Thead>
                                 <Table.Tbody>
                                     {contract.payments.map((p: any) => (
                                         <Table.Tr key={p.id}>
-                                            <Table.Td>{formatDate(p.date)}</Table.Td>
-                                            <Table.Td ta="right">{formatMoney(Number(p.amount))}</Table.Td>
+                                            <Table.Td>{formatDate(p.date, language)}</Table.Td>
+                                            <Table.Td ta="right">{formatMoney(Number(p.amount), language)}</Table.Td>
                                             <Table.Td>{p.notes || '-'}</Table.Td>
                                         </Table.Tr>
                                     ))}
                                 </Table.Tbody>
                             </Table>
+                            </Table.ScrollContainer>
                         )}
 
                         <Group mt="sm">
@@ -148,7 +158,7 @@ export default function SubcontractorShow({ subcontractor, projects }: Props) {
                                 size="compact-xs" variant="light"
                                 onClick={() => { setActiveContractId(contract.id); paymentModalHandlers.open(); }}
                             >
-                                + Add Payment
+                                {t.subcontractors.addPayment}
                             </Button>
                         </Group>
                     </Paper>
@@ -156,26 +166,26 @@ export default function SubcontractorShow({ subcontractor, projects }: Props) {
             })}
 
             {/* Add Contract Modal */}
-            <Modal opened={contractModal} onClose={contractModalHandlers.close} title="Add Contract">
+            <Modal opened={contractModal} onClose={contractModalHandlers.close} title={t.subcontractors.addContract.replace('+ ', '')}>
                 <form onSubmit={submitContract}>
                     <Stack>
-                        <Select label="Project" data={projectOptions} value={contractForm.data.project_id} onChange={(v) => contractForm.setData('project_id', v || '')} required searchable />
-                        <TextInput label="Work Description" value={contractForm.data.description} onChange={(e) => contractForm.setData('description', e.target.value)} required />
-                        <NumberInput label="Billed Amount (TZS)" value={contractForm.data.billed_amount} onChange={(v) => contractForm.setData('billed_amount', Number(v) || 0)} min={0} thousandSeparator="," required />
-                        <Select label="Status" data={[{ value: 'pending', label: 'Pending' }, { value: 'in_progress', label: 'In Progress' }, { value: 'completed', label: 'Completed' }]} value={contractForm.data.status} onChange={(v) => contractForm.setData('status', v || 'in_progress')} />
-                        <Button type="submit" loading={contractForm.processing}>Add Contract</Button>
+                        <Select label={t.expenses.project} data={projectOptions} value={contractForm.data.project_id} onChange={(v) => contractForm.setData('project_id', v || '')} required searchable />
+                        <TextInput label={t.subcontractors.workDescription} value={contractForm.data.description} onChange={(e) => contractForm.setData('description', e.target.value)} required />
+                        <NumberInput label={t.subcontractors.billedAmountTzs} value={contractForm.data.billed_amount} onChange={(v) => contractForm.setData('billed_amount', Number(v) || 0)} min={0} thousandSeparator="," required />
+                        <Select label={t.common.status} data={[{ value: 'pending', label: t.subcontractors.pending }, { value: 'in_progress', label: t.subcontractors.inProgress }, { value: 'completed', label: t.subcontractors.completed }]} value={contractForm.data.status} onChange={(v) => contractForm.setData('status', v || 'in_progress')} />
+                        <Button type="submit" loading={contractForm.processing}>{t.subcontractors.addContract.replace('+ ', '')}</Button>
                     </Stack>
                 </form>
             </Modal>
 
             {/* Add Payment Modal */}
-            <Modal opened={paymentModal} onClose={paymentModalHandlers.close} title="Record Payment">
+            <Modal opened={paymentModal} onClose={paymentModalHandlers.close} title={t.subcontractors.recordPayment}>
                 <form onSubmit={submitPayment}>
                     <Stack>
-                        <TextInput label="Date" type="date" value={paymentForm.data.date} onChange={(e) => paymentForm.setData('date', e.target.value)} required />
-                        <NumberInput label="Amount (TZS)" value={paymentForm.data.amount} onChange={(v) => paymentForm.setData('amount', Number(v) || 0)} min={0.01} thousandSeparator="," required />
-                        <TextInput label="Notes" value={paymentForm.data.notes} onChange={(e) => paymentForm.setData('notes', e.target.value)} />
-                        <Button type="submit" loading={paymentForm.processing}>Record Payment</Button>
+                        <DatePicker label={t.common.date} value={paymentForm.data.date} onChange={(v) => paymentForm.setData('date', v)} required />
+                        <NumberInput label={t.subcontractors.amountTzs} value={paymentForm.data.amount} onChange={(v) => paymentForm.setData('amount', Number(v) || 0)} min={0.01} thousandSeparator="," required />
+                        <TextInput label={t.common.notes} value={paymentForm.data.notes} onChange={(e) => paymentForm.setData('notes', e.target.value)} />
+                        <Button type="submit" loading={paymentForm.processing}>{t.subcontractors.recordPayment}</Button>
                     </Stack>
                 </form>
             </Modal>

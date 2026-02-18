@@ -12,6 +12,8 @@ import {
 } from '@mantine/core';
 import { Material, Project } from '@/types';
 import { formatMoney } from '@/utils/format';
+import { useLanguage } from '@/contexts/LanguageContext';
+import DatePicker from '@/Components/DatePicker';
 
 interface Props {
     expense: Material;
@@ -20,6 +22,7 @@ interface Props {
 }
 
 export default function ExpenseEdit({ expense, projects, categories }: Props) {
+    const { t, language } = useLanguage();
     const { data, setData, put, processing, errors } = useForm({
         project_id: String(expense.project_id),
         date: expense.date.split('T')[0],
@@ -41,14 +44,14 @@ export default function ExpenseEdit({ expense, projects, categories }: Props) {
     const categoryOptions = Object.entries(categories).map(([k, v]) => ({ value: k, label: v }));
 
     return (
-        <AuthenticatedLayout header="Edit Expense">
-            <Head title="Edit Expense" />
+        <AuthenticatedLayout header={t.expenses.editExpense}>
+            <Head title={t.expenses.editExpense} />
 
             <Paper shadow="xs" p="lg" radius="md" withBorder maw={700}>
                 <form onSubmit={submit}>
                     <SimpleGrid cols={{ base: 1, sm: 2 }} mb="md">
                         <Select
-                            label="Project"
+                            label={t.expenses.project}
                             data={projectOptions}
                             value={data.project_id}
                             onChange={(v) => setData('project_id', v || '')}
@@ -56,18 +59,17 @@ export default function ExpenseEdit({ expense, projects, categories }: Props) {
                             required
                             searchable
                         />
-                        <TextInput
-                            label="Date"
-                            type="date"
+                        <DatePicker
+                            label={t.common.date}
                             value={data.date}
-                            onChange={(e) => setData('date', e.target.value)}
+                            onChange={(v) => setData('date', v)}
                             error={errors.date}
                             required
                         />
                     </SimpleGrid>
 
                     <TextInput
-                        label="Description"
+                        label={t.expenses.description}
                         value={data.description}
                         onChange={(e) => setData('description', e.target.value)}
                         error={errors.description}
@@ -77,7 +79,7 @@ export default function ExpenseEdit({ expense, projects, categories }: Props) {
 
                     <SimpleGrid cols={{ base: 1, sm: 3 }} mb="md">
                         <NumberInput
-                            label="Quantity"
+                            label={t.expenses.qty}
                             value={data.quantity}
                             onChange={(v) => setData('quantity', Number(v) || 0)}
                             error={errors.quantity}
@@ -86,13 +88,13 @@ export default function ExpenseEdit({ expense, projects, categories }: Props) {
                             required
                         />
                         <TextInput
-                            label="Unit"
+                            label={t.expenses.unit}
                             value={data.unit}
                             onChange={(e) => setData('unit', e.target.value.toUpperCase())}
                             error={errors.unit}
                         />
                         <NumberInput
-                            label="Unit Price (TZS)"
+                            label={t.expenses.unitPriceTzs}
                             value={data.unit_price}
                             onChange={(v) => setData('unit_price', Number(v) || 0)}
                             error={errors.unit_price}
@@ -103,7 +105,7 @@ export default function ExpenseEdit({ expense, projects, categories }: Props) {
                     </SimpleGrid>
 
                     <Select
-                        label="Category"
+                        label={t.expenses.category}
                         data={categoryOptions}
                         value={data.category}
                         onChange={(v) => setData('category', v || 'other')}
@@ -112,14 +114,14 @@ export default function ExpenseEdit({ expense, projects, categories }: Props) {
                         mb="md"
                     />
 
-                    <Paper p="sm" bg="blue.0" radius="md" mb="lg">
-                        <Text size="sm" c="dimmed">Subtotal</Text>
-                        <Text size="xl" fw={700}>TZS {formatMoney(subtotal)}</Text>
+                    <Paper p="sm" radius="md" mb="lg" style={{ backgroundColor: 'var(--mantine-color-blue-light)' }}>
+                        <Text size="sm" c="dimmed">{t.expenses.subtotal}</Text>
+                        <Text size="xl" fw={700}>TZS {formatMoney(subtotal, language)}</Text>
                     </Paper>
 
                     <Group>
-                        <Button type="submit" loading={processing}>Update Expense</Button>
-                        <Button variant="subtle" component={Link} href="/expenses">Cancel</Button>
+                        <Button type="submit" loading={processing}>{t.expenses.updateExpense}</Button>
+                        <Button variant="subtle" component={Link} href="/expenses">{t.common.cancel}</Button>
                     </Group>
                 </form>
             </Paper>

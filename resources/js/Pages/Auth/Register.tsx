@@ -5,8 +5,10 @@ import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Register() {
+    const { t } = useLanguage();
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
@@ -24,11 +26,11 @@ export default function Register() {
 
     return (
         <GuestLayout>
-            <Head title="Register" />
+            <Head title={t.auth.registerTitle} />
 
             <form onSubmit={submit}>
                 <div>
-                    <InputLabel htmlFor="name" value="Name" />
+                    <InputLabel htmlFor="name" value={t.auth.nameLabel} />
 
                     <TextInput
                         id="name"
@@ -45,7 +47,7 @@ export default function Register() {
                 </div>
 
                 <div className="mt-4">
-                    <InputLabel htmlFor="email" value="Email" />
+                    <InputLabel htmlFor="email" value={t.auth.emailLabel} />
 
                     <TextInput
                         id="email"
@@ -62,7 +64,7 @@ export default function Register() {
                 </div>
 
                 <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
+                    <InputLabel htmlFor="password" value={t.common.password} />
 
                     <TextInput
                         id="password"
@@ -81,7 +83,7 @@ export default function Register() {
                 <div className="mt-4">
                     <InputLabel
                         htmlFor="password_confirmation"
-                        value="Confirm Password"
+                        value={t.common.confirmPassword}
                     />
 
                     <TextInput
@@ -106,13 +108,13 @@ export default function Register() {
                 <div className="mt-4 flex items-center justify-end">
                     <Link
                         href={route('login')}
-                        className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        className="rounded-md text-sm text-gray-600 dark:text-gray-400 underline hover:text-gray-900 dark:hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                     >
-                        Already registered?
+                        {t.auth.alreadyRegistered}
                     </Link>
 
                     <PrimaryButton className="ms-4" disabled={processing}>
-                        Register
+                        {t.auth.register}
                     </PrimaryButton>
                 </div>
             </form>
