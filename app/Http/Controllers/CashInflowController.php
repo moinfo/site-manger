@@ -25,13 +25,13 @@ class CashInflowController extends Controller
                 SUM(cash_in) as cash_in,
                 SUM(cash_out) as cash_out
             FROM (
-                SELECT strftime('%Y-%m', date) as month, SUM(amount) as cash_in, 0 as cash_out
+                SELECT DATE_FORMAT(date, '%Y-%m') as month, SUM(amount) as cash_in, 0 as cash_out
                 FROM cash_inflows
-                GROUP BY strftime('%Y-%m', date)
+                GROUP BY DATE_FORMAT(date, '%Y-%m')
                 UNION ALL
-                SELECT strftime('%Y-%m', date) as month, 0 as cash_in, SUM(subtotal) as cash_out
+                SELECT DATE_FORMAT(date, '%Y-%m') as month, 0 as cash_in, SUM(subtotal) as cash_out
                 FROM materials
-                GROUP BY strftime('%Y-%m', date)
+                GROUP BY DATE_FORMAT(date, '%Y-%m')
             ) combined
             GROUP BY month
             ORDER BY month DESC

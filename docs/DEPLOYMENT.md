@@ -640,23 +640,6 @@ sudo supervisorctl restart site-manager-worker:*
 tail -50 /var/www/site-manager/storage/logs/worker.log
 ```
 
-### SQLite Date Functions in MySQL
-
-If dashboard charts or reports show incorrect date grouping after switching to MySQL, the `strftime()` calls need to be replaced with `DATE_FORMAT()`. Check:
-
-- `app/Http/Controllers/DashboardController.php`
-- `app/Http/Controllers/ReportController.php`
-
-Replace:
-```php
-DB::raw("strftime('%Y-%m', date) as month")
-```
-
-With:
-```php
-DB::raw("DATE_FORMAT(date, '%Y-%m') as month")
-```
-
 ---
 
 ## Backup Recommendations

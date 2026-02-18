@@ -34,7 +34,7 @@ class DashboardController extends Controller
 
         // Monthly spending trend (last 6 months)
         $monthlySpending = Material::select(
-                DB::raw("strftime('%Y-%m', date) as month"),
+                DB::raw("DATE_FORMAT(date, '%Y-%m') as month"),
                 DB::raw('SUM(subtotal) as total')
             )
             ->where('date', '>=', $now->copy()->subMonths(6)->startOfMonth())

@@ -10,7 +10,7 @@ Construction site management application for tracking projects, expenses, subcon
 | Frontend | React 18, TypeScript, Inertia.js |
 | UI | Mantine v8 |
 | Charts | Recharts |
-| Database | SQLite (dev) / MySQL 8 (production) |
+| Database | MySQL 8 |
 | Auth | Laravel Breeze, role-based |
 | Reports | DomPDF (PDF), CSV export |
 | Import | Maatwebsite Laravel Excel |
@@ -50,12 +50,23 @@ All monetary values are in **TZS (Tanzanian Shillings)**.
 
 ## Requirements
 
-- PHP 8.2+ with extensions: `mbstring`, `xml`, `curl`, `zip`, `gd`, `sqlite3` or `pdo_mysql`
+- PHP 8.2+ with extensions: `mbstring`, `xml`, `curl`, `zip`, `gd`, `pdo_mysql`
 - Composer 2
 - Node.js 20+ & npm
-- SQLite (dev) or MySQL 8+ (production)
+- MySQL 8+
 
 ## Local Development
+
+### Prerequisites
+
+1. Install PHP 8.2+, Composer, Node.js 20+, and MySQL 8+
+2. Create a MySQL database:
+
+```sql
+CREATE DATABASE site_manager CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### Setup
 
 ```bash
 # Clone the repository
@@ -64,6 +75,15 @@ cd site-manager
 
 # One-command setup (installs deps, generates key, runs migrations, builds assets)
 composer setup
+
+# Update .env with your MySQL credentials
+# DB_CONNECTION=mysql
+# DB_DATABASE=site_manager
+# DB_USERNAME=root
+# DB_PASSWORD=your_password
+
+# Run migrations
+php artisan migrate
 
 # Seed the admin user
 php artisan db:seed
@@ -199,10 +219,6 @@ php artisan queue:work --sleep=3 --tries=3 --max-time=3600
 ```
 
 For production, use Supervisor or a systemd service to keep the worker running.
-
-### 6. SQLite vs MySQL Note
-
-The app uses `strftime()` for SQLite date grouping in dashboard charts and reports. When using MySQL in production, verify that `DashboardController` and `ReportController` handle the `DATE_FORMAT()` equivalent. The current code is built for SQLite — you may need to conditionally switch date functions based on `DB_CONNECTION`.
 
 ---
 

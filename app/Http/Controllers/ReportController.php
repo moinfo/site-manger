@@ -22,7 +22,7 @@ class ReportController extends Controller
     public function monthly(Request $request)
     {
         $query = Material::select(
-                DB::raw("strftime('%Y-%m', date) as month"),
+                DB::raw("DATE_FORMAT(date, '%Y-%m') as month"),
                 'category',
                 DB::raw('SUM(subtotal) as total')
             );
@@ -186,7 +186,7 @@ class ReportController extends Controller
     private function monthlyExpensesPdf(Request $request)
     {
         $query = Material::select(
-                DB::raw("strftime('%Y-%m', date) as month"),
+                DB::raw("DATE_FORMAT(date, '%Y-%m') as month"),
                 'category',
                 DB::raw('SUM(subtotal) as total')
             );
