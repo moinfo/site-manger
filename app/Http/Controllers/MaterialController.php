@@ -11,6 +11,14 @@ class MaterialController extends Controller
 {
     public function index(Request $request)
     {
+        // Default to current month if no dates provided
+        if (!$request->filled('date_from') && !$request->filled('date_to')) {
+            $request->merge([
+                'date_from' => now()->startOfMonth()->toDateString(),
+                'date_to' => now()->toDateString(),
+            ]);
+        }
+
         $query = Material::with('project', 'recorder');
 
         if ($request->filled('project_id')) {

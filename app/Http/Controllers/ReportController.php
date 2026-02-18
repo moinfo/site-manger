@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\CashInflow;
+use App\Models\Contract;
 use App\Models\FinancialCharge;
 use App\Models\Material;
+use App\Models\Payment;
 use App\Models\Project;
 use App\Models\Subcontractor;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -360,14 +362,22 @@ class ReportController extends Controller
         }
 
         // --- Opening balance: all transactions BEFORE date_from ---
-        // Debit = cash in, Credit = cash out (matches Dashboard: CashInflow - Material)
+        // Debit = cash in, Credit = cash out
         $openingBalance = 0;
         if ($dateFrom) {
             $debitsBefore = CashInflow::when($projectId, fn ($q) => $q->where('project_id', $projectId))
                 ->where('date', '<', $dateFrom)->sum('amount');
-            $creditsBefore = Material::when($projectId, fn ($q) => $q->where('project_id', $projectId))
+
+            $materialsBefore = Material::when($projectId, fn ($q) => $q->where('project_id', $projectId))
                 ->where('date', '<', $dateFrom)->sum('subtotal');
-            $openingBalance = $debitsBefore - $creditsBefore;
+
+            $paymentsBefore = Payment::whereHas('contract', fn ($q) => $q->when($projectId, fn ($q2) => $q2->where('project_id', $projectId)))
+                ->where('date', '<', $dateFrom)->sum('amount');
+
+            $chargesBefore = FinancialCharge::when($projectId, fn ($q) => $q->where('project_id', $projectId))
+                ->where('date', '<', $dateFrom)->sum('amount');
+
+            $openingBalance = $debitsBefore - $materialsBefore - $paymentsBefore - $chargesBefore;
         }
 
         // --- Build transaction rows within range ---
@@ -396,6 +406,36 @@ class ReportController extends Controller
                 'description' => 'Expense: ' . $r->description,
                 'debit' => 0,
                 'credit' => (float) $r->subtotal,
+            ]);
+        }
+
+        // Credit (Subcontractor payments = money out)
+        $paymentQuery = Payment::with('contract.subcontractor')
+            ->whereHas('contract', fn ($q) => $q->when($projectId, fn ($q2) => $q2->where('project_id', $projectId)));
+        if ($dateFrom) $paymentQuery->where('date', '>=', $dateFrom);
+        if ($dateTo) $paymentQuery->where('date', '<=', $dateTo);
+        foreach ($paymentQuery->orderBy('date')->get() as $r) {
+            $subName = $r->contract->subcontractor->name ?? 'Subcontractor';
+            $rows->push([
+                'date' => $r->date->format('Y-m-d'),
+                'description' => 'Payment: ' . $subName . ($r->notes ? ' - ' . $r->notes : ''),
+                'debit' => 0,
+                'credit' => (float) $r->amount,
+            ]);
+        }
+
+        // Credit (Financial charges = money out)
+        $chargeQuery = FinancialCharge::with('category')
+            ->when($projectId, fn ($q) => $q->where('project_id', $projectId));
+        if ($dateFrom) $chargeQuery->where('date', '>=', $dateFrom);
+        if ($dateTo) $chargeQuery->where('date', '<=', $dateTo);
+        foreach ($chargeQuery->orderBy('date')->get() as $r) {
+            $catName = $r->category->name ?? 'Charge';
+            $rows->push([
+                'date' => $r->date->format('Y-m-d'),
+                'description' => 'Charge: ' . $catName . ($r->description ? ' - ' . $r->description : ''),
+                'debit' => 0,
+                'credit' => (float) $r->amount,
             ]);
         }
 
