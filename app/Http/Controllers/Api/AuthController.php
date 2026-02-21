@@ -63,6 +63,26 @@ class AuthController extends ApiController
         return $this->success(new UserResource($request->user()));
     }
 
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if (! Hash::check($request->current_password, $request->user()->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['The current password is incorrect.'],
+            ]);
+        }
+
+        $request->user()->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        return $this->success(null, 'Password changed successfully.');
+    }
+
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
