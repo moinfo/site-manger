@@ -20,7 +20,7 @@ Route::prefix('auth')->group(function () {
 });
 
 // Authenticated routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum')->name('api.')->group(function () {
 
     // Auth
     Route::get('/auth/me', [AuthController::class, 'me']);
