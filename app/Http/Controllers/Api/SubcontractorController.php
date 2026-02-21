@@ -9,9 +9,20 @@ use Illuminate\Http\Request;
 
 class SubcontractorController extends ApiController
 {
-    public function index()
+    public function index(Request $request)
     {
-        $subcontractors = Subcontractor::with('contracts.payments')->get();
+        $query = Subcontractor::with(['contracts' => function ($q) use ($request) {
+            if ($request->filled('project_id')) {
+                $q->where('project_id', $request->project_id);
+            }
+            $q->with('payments');
+        }]);
+
+        $subcontractors = $query->get();
+
+        if ($request->filled('project_id')) {
+            $subcontractors = $subcontractors->filter(fn ($s) => $s->contracts->isNotEmpty())->values();
+        }
 
         return SubcontractorResource::collection($subcontractors);
     }

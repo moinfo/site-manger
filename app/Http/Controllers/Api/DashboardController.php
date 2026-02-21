@@ -7,22 +7,27 @@ use App\Models\Material;
 use App\Models\Project;
 use App\Models\Subcontractor;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends ApiController
 {
-    public function index()
+    public function index(Request $request)
     {
         $now = Carbon::now();
         $currentMonth = $now->month;
         $currentYear = $now->year;
+        $projectId = $request->input('project_id');
 
         $spentThisMonth = Material::whereMonth('date', $currentMonth)
             ->whereYear('date', $currentYear)
+            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
             ->sum('subtotal');
 
-        $totalSpent = Material::sum('subtotal');
-        $totalReceived = CashInflow::sum('amount');
+        $totalSpent = Material::when($projectId, fn ($q) => $q->where('project_id', $projectId))
+            ->sum('subtotal');
+        $totalReceived = CashInflow::when($projectId, fn ($q) => $q->where('project_id', $projectId))
+            ->sum('amount');
         $cashBalance = $totalReceived - $totalSpent;
 
         // Monthly spending trend (last 6 months)
@@ -31,6 +36,7 @@ class DashboardController extends ApiController
                 DB::raw('SUM(subtotal) as total')
             )
             ->where('date', '>=', $now->copy()->subMonths(6)->startOfMonth())
+            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
             ->groupBy('month')
             ->orderBy('month')
             ->get()
@@ -41,6 +47,7 @@ class DashboardController extends ApiController
 
         // Spending by category
         $spendingByCategory = Material::select('category', DB::raw('SUM(subtotal) as total'))
+            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
             ->groupBy('category')
             ->orderByDesc('total')
             ->get()
@@ -50,37 +57,63 @@ class DashboardController extends ApiController
             ]);
 
         // Subcontractor balances
-        $subcontractors = Subcontractor::with('contracts.payments')
+        $subcontractors = Subcontractor::with(['contracts' => function ($q) use ($projectId) {
+                if ($projectId) {
+                    $q->where('project_id', $projectId);
+                }
+                $q->with('payments');
+            }])
             ->get()
-            ->map(fn ($sub) => [
-                'id' => $sub->id,
-                'name' => $sub->name,
-                'total_billed' => $sub->total_billed,
-                'total_paid' => $sub->total_paid,
-                'balance' => $sub->balance,
-            ])
+            ->map(function ($sub) use ($projectId) {
+                if ($projectId) {
+                    $totalBilled = $sub->contracts->sum('billed_amount');
+                    $totalPaid = $sub->contracts->flatMap->payments->sum('amount');
+                    return [
+                        'id' => $sub->id,
+                        'name' => $sub->name,
+                        'total_billed' => $totalBilled,
+                        'total_paid' => $totalPaid,
+                        'balance' => $totalBilled - $totalPaid,
+                    ];
+                }
+                return [
+                    'id' => $sub->id,
+                    'name' => $sub->name,
+                    'total_billed' => $sub->total_billed,
+                    'total_paid' => $sub->total_paid,
+                    'balance' => $sub->balance,
+                ];
+            })
             ->filter(fn ($sub) => $sub['total_billed'] > 0 || $sub['total_paid'] > 0);
 
         // Recent expenses
         $recentExpenses = Material::with('project')
+            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
             ->latest('date')
             ->take(10)
             ->get();
 
-        $activeProjects = Project::where('status', 'active')->count();
-        $totalProjects = Project::count();
-        $totalSubcontractors = Subcontractor::count();
+        $activeProjects = Project::where('status', 'active')
+            ->when($projectId, fn ($q) => $q->where('id', $projectId))
+            ->count();
+        $totalProjects = Project::when($projectId, fn ($q) => $q->where('id', $projectId))
+            ->count();
+        $totalSubcontractors = $projectId
+            ? Subcontractor::whereHas('contracts', fn ($q) => $q->where('project_id', $projectId))->count()
+            : Subcontractor::count();
 
         // Monthly cash flow trend (last 6 months)
         $monthFrom = $now->copy()->subMonths(6)->startOfMonth()->toDateString();
 
         $cashInByMonth = CashInflow::selectRaw("DATE_FORMAT(date, '%Y-%m') as month, SUM(amount) as total")
             ->where('date', '>=', $monthFrom)
+            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
             ->groupByRaw("DATE_FORMAT(date, '%Y-%m')")
             ->pluck('total', 'month');
 
         $cashOutByMonth = Material::selectRaw("DATE_FORMAT(date, '%Y-%m') as month, SUM(subtotal) as total")
             ->where('date', '>=', $monthFrom)
+            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
             ->groupByRaw("DATE_FORMAT(date, '%Y-%m')")
             ->pluck('total', 'month');
 
@@ -93,6 +126,7 @@ class DashboardController extends ApiController
 
         // Project budgets vs spent
         $projectBudgets = Project::withSum('materials as spent', 'subtotal')
+            ->when($projectId, fn ($q) => $q->where('id', $projectId))
             ->orderByDesc('budget')
             ->limit(6)
             ->get()
